@@ -3,6 +3,7 @@ Security Headers module — passive review of HTTP response security headers.
 Flags missing/misconfigured headers. Emits one Finding per issue.
 """
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
 from models.result import (
@@ -24,6 +25,11 @@ SECURITY_HEADERS = [
     ("Permissions-Policy", "permissions", Severity.INFO,
      "Permissions-Policy missing — browser features unrestricted."),
 ]
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class SecurityHeadersModule(BaseModule):
     name = "security_headers"
@@ -53,7 +59,7 @@ class SecurityHeadersModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="configuration",
                     target=context.target.host,
-                    affected_url=url,
+                    affected_url=_first_direct_url(str(desc), ""),
                     description=desc,
                     module=self.name,
                     scan_id=context.scan_id,
@@ -80,7 +86,7 @@ class SecurityHeadersModule(BaseModule):
                         confidence=Confidence.HIGH,
                         category="configuration",
                         target=context.target.host,
-                        affected_url=url,
+                        affected_url=_first_direct_url(str(f"The '{leak}' header reveals: {val}"), ""),
                         description=f"The '{leak}' header reveals: {val}",
                         module=self.name,
                         scan_id=context.scan_id,

@@ -72,6 +72,11 @@ def _is_real_sensitive_hit(path: str, status: int, body: str) -> tuple[bool, str
     return False, "", Severity.INFO
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class DeepSurfaceAndLeaksModule(BaseModule):
     name = "deep_surface_and_leaks"
     version = "1.0.0"
@@ -144,7 +149,7 @@ class DeepSurfaceAndLeaksModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="exposure",
                     target=context.target.host,
-                    affected_url=str(getattr(resp, "url", probe_url)),
+                    affected_url=_first_direct_url(str(desc), base_url),
                     description=desc,
                     module=self.name,
                     scan_id=context.scan_id,
@@ -185,7 +190,7 @@ class DeepSurfaceAndLeaksModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=context.target.host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Sample addresses: {sample}"), base_url),
                 description=f"Sample addresses: {sample}",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -200,7 +205,7 @@ class DeepSurfaceAndLeaksModule(BaseModule):
                 confidence=Confidence.LOW,
                 category="exposure",
                 target=context.target.host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Redacted matches: {summary} — verify manually."), base_url),
                 description=f"Redacted matches: {summary} — verify manually.",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -215,7 +220,7 @@ class DeepSurfaceAndLeaksModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=context.target.host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Candidates: {sample_routes}"), base_url),
                 description=f"Candidates: {sample_routes}",
                 module=self.name,
                 scan_id=context.scan_id,

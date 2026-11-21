@@ -1,7 +1,13 @@
+import re
 """Example passive module — proves engine + scope + DI loop. No network."""
 from core.engine import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
 from models.result import Confidence, Finding, Severity, VerificationStatus
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class ExamplePassiveModule(BaseModule):
     name = "example_passive"
@@ -18,7 +24,7 @@ class ExamplePassiveModule(BaseModule):
             confidence=Confidence.HIGH,
             category="reconnaissance",
             target=context.target.host,
-            affected_url=context.target.url,
+            affected_url=_first_direct_url(str(f"Target host is {context.target.host}."), ""),
             description=f"Target host is {context.target.host}.",
             module=self.name,
             scan_id=context.scan_id,

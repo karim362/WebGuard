@@ -29,6 +29,11 @@ META_AND_SERVICE_PATHS = (
 _SOFT_404_RE = re.compile(r"(?i)\b(not found|404|page does not exist|صفحة غير موجودة)\b")
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class AssetAndTechProberModule(BaseModule):
     name = "asset_and_tech_prober"
     version = "1.0.0"
@@ -61,7 +66,7 @@ class AssetAndTechProberModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="fingerprint",
                 target=host,
-                affected_url=str(getattr(root_resp, "url", base_url)),
+                affected_url=_first_direct_url(str("Backend framework/runtime header is publicly visible."), base_url),
                 description="Backend framework/runtime header is publicly visible.",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -75,7 +80,7 @@ class AssetAndTechProberModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=host,
-                affected_url=str(getattr(root_resp, "url", base_url)),
+                affected_url=_first_direct_url(str(f"Link header: {hmap['link'][:160]}"), base_url),
                 description=f"Link header: {hmap['link'][:160]}",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -107,7 +112,7 @@ class AssetAndTechProberModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Endpoints: {', '.join(reachable_hits[:8])}"), base_url),
                 description=f"Endpoints: {', '.join(reachable_hits[:8])}",
                 module=self.name,
                 scan_id=context.scan_id,

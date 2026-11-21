@@ -19,6 +19,11 @@ from models.result import (
 _DISALLOW_RE = re.compile(r"(?im)^\s*disallow\s*:\s*(\S+)\s*$")
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class RobotsCookieAuditModule(BaseModule):
     name = "robots_cookie_audit"
     version = "1.0.0"
@@ -60,7 +65,7 @@ class RobotsCookieAuditModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="session",
                     target=context.target.host,
-                    affected_url=base_url,
+                    affected_url=_first_direct_url(str("SameSite=None requires Secure flag to be accepted by modern browsers."), base_url),
                     description="SameSite=None requires Secure flag to be accepted by modern browsers.",
                     module=self.name,
                     scan_id=context.scan_id,
@@ -73,7 +78,7 @@ class RobotsCookieAuditModule(BaseModule):
                     confidence=Confidence.MEDIUM,
                     category="session",
                     target=context.target.host,
-                    affected_url=base_url,
+                    affected_url=_first_direct_url(str("Consider setting SameSite=Lax or Strict on cookies."), base_url),
                     description="Consider setting SameSite=Lax or Strict on cookies.",
                     module=self.name,
                     scan_id=context.scan_id,
@@ -112,7 +117,7 @@ class RobotsCookieAuditModule(BaseModule):
                             confidence=Confidence.HIGH,
                             category="recon",
                             target=context.target.host,
-                            affected_url=robots_url,
+                            affected_url=_first_direct_url(str(f"Observed paths: {', '.join(reachable[:6])}"), base_url),
                             description=f"Observed paths: {', '.join(reachable[:6])}",
                             module=self.name,
                             scan_id=context.scan_id,

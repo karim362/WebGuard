@@ -1,5 +1,6 @@
 """Session cookie and auth header posture review."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import (
     BaseModule,
@@ -15,6 +16,11 @@ from models.result import (
 )
 
 SESSION_NAMES = ("session", "sid", "phpsessid", "jsessionid", "auth", "jwt")
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class SessionReviewModule(BaseModule):
@@ -59,7 +65,7 @@ class SessionReviewModule(BaseModule):
                     confidence=Confidence.MEDIUM,
                     category="authentication",
                     target=context.target.host,
-                    affected_url=str(r.url),
+                    affected_url=_first_direct_url(str("Missing flags: " + ", ".join(missing)), ""),
                     description="Missing flags: " + ", ".join(missing),
                     module=self.name,
                     scan_id=context.scan_id,

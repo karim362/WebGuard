@@ -22,6 +22,11 @@ _API_ENDPOINT_RE = re.compile(
 )
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class CorsJsApiMinerModule(BaseModule):
     name = "cors_js_api_miner"
     version = "1.0.0"
@@ -56,7 +61,10 @@ class CorsJsApiMinerModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(getattr(cors_resp, "url", url)),
+                affected_url=_first_direct_url(str((
+                    "Server echoed external Origin header with "
+                    "Access-Control-Allow-Credentials: true."
+                )), ""),
                 description=(
                     "Server echoed external Origin header with "
                     "Access-Control-Allow-Credentials: true."
@@ -72,7 +80,7 @@ class CorsJsApiMinerModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(getattr(cors_resp, "url", url)),
+                affected_url=_first_direct_url(str("Server echoed test Origin header without credential flag."), ""),
                 description="Server echoed test Origin header without credential flag.",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -112,7 +120,7 @@ class CorsJsApiMinerModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str(f"Sample routes: {sample}"), ""),
                 description=f"Sample routes: {sample}",
                 module=self.name,
                 scan_id=context.scan_id,

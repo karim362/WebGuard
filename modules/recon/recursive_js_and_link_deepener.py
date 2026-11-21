@@ -25,6 +25,11 @@ _ENDPOINT_RE = re.compile(
 )
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class RecursiveJsAndLinkDeepenerModule(BaseModule):
     name = "recursive_js_and_link_deepener"
     version = "1.0.0"
@@ -131,7 +136,10 @@ class RecursiveJsAndLinkDeepenerModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str((
+                    f"Sample routes: {', '.join(discovered_routes[:6]) or 'none'}"
+                    + (f" | Params: {', '.join(sorted(query_params)[:6])}" if query_params else "")
+                )), base_url),
                 description=(
                     f"Sample routes: {', '.join(discovered_routes[:6]) or 'none'}"
                     + (f" | Params: {', '.join(sorted(query_params)[:6])}" if query_params else "")
@@ -148,7 +156,7 @@ class RecursiveJsAndLinkDeepenerModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Responses: {', '.join(live_probes[:6])}"), base_url),
                 description=f"Responses: {', '.join(live_probes[:6])}",
                 module=self.name,
                 scan_id=context.scan_id,

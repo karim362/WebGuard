@@ -13,6 +13,11 @@ _URL_IN_JS_RE = re.compile(
     r'["\']((?:https?://|/)[^"\'\s<>]{4,200})["\']', re.IGNORECASE
 )
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class JsAnalysisModule(BaseModule):
     name = "js_analysis"
     version = "0.5.0"
@@ -70,7 +75,7 @@ class JsAnalysisModule(BaseModule):
             confidence=Confidence.LOW,
             category="discovery",
             target=context.target.host,
-            affected_url=target_url,
+            affected_url=_first_direct_url(str("Candidate endpoints extracted from JavaScript."), ""),
             description="Candidate endpoints extracted from JavaScript.",
             module=self.name,
             scan_id=context.scan_id,

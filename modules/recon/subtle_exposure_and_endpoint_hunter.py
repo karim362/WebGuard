@@ -35,6 +35,11 @@ _SUBTLE_PARAMS = {
 _SOFT_404_RE = re.compile(r"(?i)\b(404|not found|page not found|صفحة غير موجودة)\b")
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class SubtleExposureAndEndpointHunterModule(BaseModule):
     name = "subtle_exposure_and_endpoint_hunter"
     version = "1.0.0"
@@ -95,7 +100,7 @@ class SubtleExposureAndEndpointHunterModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="exposure",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(f"Observed: {', '.join(hits[:6])}"), final_url),
                 description=f"Observed: {', '.join(hits[:6])}",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -109,7 +114,7 @@ class SubtleExposureAndEndpointHunterModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="input_security",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(f"Params: {', '.join(sorted(subtle_param_hits))}"), final_url),
                 description=f"Params: {', '.join(sorted(subtle_param_hits))}",
                 module=self.name,
                 scan_id=context.scan_id,

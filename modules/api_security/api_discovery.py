@@ -1,5 +1,6 @@
 """Discovers common API and GraphQL endpoints."""
 from __future__ import annotations
+import re
 from urllib.parse import urljoin
 from core.execution_manager import ModuleContext
 from models.module import (
@@ -22,6 +23,11 @@ API_PATHS = [
     "/openapi.json",
     "/swagger.json",
 ]
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class ApiDiscoveryModule(BaseModule):
@@ -53,7 +59,7 @@ class ApiDiscoveryModule(BaseModule):
                     confidence=Confidence.MEDIUM,
                     category="api_security",
                     target=context.target.host,
-                    affected_url=url,
+                    affected_url=_first_direct_url(str(f"Endpoint responded with HTTP {code}."), ""),
                     description=f"Endpoint responded with HTTP {code}.",
                     module=self.name,
                     scan_id=context.scan_id,

@@ -1,5 +1,6 @@
 """GraphQL endpoint presence and introspection review."""
 from __future__ import annotations
+import re
 from urllib.parse import urljoin
 from core.execution_manager import ModuleContext
 from models.module import (
@@ -16,6 +17,11 @@ from models.result import (
 )
 
 GQL_PATHS = ("/graphql", "/api/graphql", "/v1/graphql")
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class GraphqlReviewModule(BaseModule):
@@ -69,7 +75,7 @@ class GraphqlReviewModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="api_security",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str(desc), ""),
                 description=desc,
                 module=self.name,
                 scan_id=context.scan_id,

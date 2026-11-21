@@ -1,5 +1,6 @@
 """TLS configuration review."""
 from __future__ import annotations
+import re
 import ssl
 import socket
 from urllib.parse import urlparse
@@ -18,6 +19,11 @@ from models.result import (
     Severity,
     VerificationStatus,
 )
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class TlsReviewModule(BaseModule):
@@ -71,7 +77,7 @@ class TlsReviewModule(BaseModule):
             confidence=Confidence.HIGH,
             category="configuration",
             target=host,
-            affected_url=context.target.url,
+            affected_url=_first_direct_url(str(desc), ""),
             description=desc,
             module=self.name,
             scan_id=context.scan_id,

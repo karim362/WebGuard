@@ -1,5 +1,6 @@
 """HTTP methods and CORS header posture review."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import (
     BaseModule,
@@ -15,6 +16,11 @@ from models.result import (
 )
 
 _RISKY_METHODS = ("PUT", "DELETE", "TRACE", "CONNECT")
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class HttpSecurityPostureModule(BaseModule):
@@ -54,7 +60,7 @@ class HttpSecurityPostureModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(getattr(r, "url", url)),
+                affected_url=_first_direct_url(str(f"Advertised methods header: {allow_hdr}"), ""),
                 description=f"Advertised methods header: {allow_hdr}",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -70,7 +76,10 @@ class HttpSecurityPostureModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(getattr(r, "url", url)),
+                affected_url=_first_direct_url(str((
+                    "Access-Control-Allow-Origin is '*' while "
+                    "Access-Control-Allow-Credentials is 'true'."
+                )), ""),
                 description=(
                     "Access-Control-Allow-Origin is '*' while "
                     "Access-Control-Allow-Credentials is 'true'."
@@ -86,7 +95,7 @@ class HttpSecurityPostureModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(getattr(r, "url", url)),
+                affected_url=_first_direct_url(str("Access-Control-Allow-Origin is set to '*'."), ""),
                 description="Access-Control-Allow-Origin is set to '*'.",
                 module=self.name,
                 scan_id=context.scan_id,

@@ -43,6 +43,10 @@ _LEAK_ERR_RE = re.compile(
 _SOFT_404_RE = re.compile(r"(?i)\b(?:404 not found|page not found|not found on this server)\b")
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 def _is_static(u: str) -> bool:
     return bool(_STATIC_EXT_RE.search(urlparse(u).path or ""))
 
@@ -158,7 +162,7 @@ class ReconExploratoryProberModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="exposure",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" | ".join(high_cues[:6])), final_url),
                 description=" | ".join(high_cues[:6]),
                 module=self.name,
                 scan_id=context.scan_id,
@@ -173,7 +177,7 @@ class ReconExploratoryProberModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" | ".join(med_all[:8])), final_url),
                 description=" | ".join(med_all[:8]),
                 module=self.name,
                 scan_id=context.scan_id,
@@ -192,7 +196,7 @@ class ReconExploratoryProberModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" ; ".join(parts)), final_url),
                 description=" ; ".join(parts),
                 module=self.name,
                 scan_id=context.scan_id,

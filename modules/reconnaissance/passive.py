@@ -1,5 +1,6 @@
 """Passive file discovery: robots.txt, sitemap.xml, security.txt."""
 from __future__ import annotations
+import re
 from urllib.parse import urljoin
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
@@ -12,6 +13,11 @@ PATHS = [
     ("/sitemap.xml", "Sitemap"),
     ("/.well-known/security.txt", "Security.txt"),
 ]
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class PassiveFilesModule(BaseModule):
     name = "passive_files"
@@ -42,7 +48,7 @@ class PassiveFilesModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="reconnaissance",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str(f"{label} is publicly accessible."), ""),
                 description=f"{label} is publicly accessible.",
                 module=self.name,
                 scan_id=context.scan_id,

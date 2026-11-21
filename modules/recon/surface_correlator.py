@@ -21,6 +21,11 @@ _FORM_RE = re.compile(r"""<form\b[^>]*>""", re.I)
 _HIGH_VAL_KEYS = {"id", "user_id", "content", "p", "zones", "q", "file", "path", "next", "url"}
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class SurfaceCorrelatorModule(BaseModule):
     name = "surface_correlator"
     version = "1.0.0"
@@ -68,7 +73,10 @@ class SurfaceCorrelatorModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str((
+                    f"Param routes: {', '.join(correlated_links) or 'none'} | "
+                    f"External hosts: {', '.join(sorted(external_hosts)[:5]) or 'none'}"
+                )), final_url),
                 description=(
                     f"Param routes: {', '.join(correlated_links) or 'none'} | "
                     f"External hosts: {', '.join(sorted(external_hosts)[:5]) or 'none'}"

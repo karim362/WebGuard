@@ -33,6 +33,11 @@ def _root_domain(host: str) -> str:
     return host.lower()
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class SubdomainDeepCrawlerModule(BaseModule):
     name = "subdomain_deep_crawler"
     version = "1.1.0"
@@ -179,7 +184,12 @@ class SubdomainDeepCrawlerModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str((
+                    f"Hosts: {', '.join(active_subs[:5])} | "
+                    f"Paths: {', '.join(sorted(crawled_paths)[:5]) or 'none'} | "
+                    f"Params: {', '.join(sorted(found_params)[:6]) or 'none'} | "
+                    f"Routes: {', '.join(sorted(mined_routes)[:5]) or 'none'}"
+                )), base_url),
                 description=(
                     f"Hosts: {', '.join(active_subs[:5])} | "
                     f"Paths: {', '.join(sorted(crawled_paths)[:5]) or 'none'} | "
@@ -199,7 +209,7 @@ class SubdomainDeepCrawlerModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Probed: {', '.join(status_shifts[:6])}"), base_url),
                 description=f"Probed: {', '.join(status_shifts[:6])}",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -213,7 +223,7 @@ class SubdomainDeepCrawlerModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="configuration",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str(f"Details: {' ; '.join(weak_sub_notes[:4])}"), base_url),
                 description=f"Details: {' ; '.join(weak_sub_notes[:4])}",
                 module=self.name,
                 scan_id=context.scan_id,

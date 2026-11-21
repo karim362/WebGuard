@@ -28,6 +28,10 @@ _MED_CUE_RE = re.compile(
 )
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 def _is_static(u: str) -> bool:
     return bool(_STATIC_EXT_RE.search(urlparse(u).path or ""))
 
@@ -129,7 +133,7 @@ class ResultsOrganizerAndDeduplicatorModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="organized_high",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" || ".join(high_group[:6])), final_url),
                 description=" || ".join(high_group[:6]),
                 module=self.name,
                 scan_id=context.scan_id,
@@ -143,7 +147,7 @@ class ResultsOrganizerAndDeduplicatorModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="organized_medium",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" || ".join(med_group[:7])), final_url),
                 description=" || ".join(med_group[:7]),
                 module=self.name,
                 scan_id=context.scan_id,
@@ -157,7 +161,7 @@ class ResultsOrganizerAndDeduplicatorModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="organized_info",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" || ".join(info_group[:7])), final_url),
                 description=" || ".join(info_group[:7]),
                 module=self.name,
                 scan_id=context.scan_id,

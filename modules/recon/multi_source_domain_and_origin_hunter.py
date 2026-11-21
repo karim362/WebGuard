@@ -30,6 +30,10 @@ _ROBOTS_HOST_RE = re.compile(r"(?im)^(?:host|sitemap)\s*:\s*(\S+)")
 _SITEMAP_LOC_RE = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.I)
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 def _is_static(u: str) -> bool:
     return bool(_STATIC_EXT_RE.search(urlparse(u).path or ""))
 
@@ -191,7 +195,7 @@ class MultiSourceDomainAndOriginHunterModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" | ".join(sub_header_notes[:6])), final_url),
                 description=" | ".join(sub_header_notes[:6]),
                 module=self.name,
                 scan_id=context.scan_id,
@@ -212,7 +216,7 @@ class MultiSourceDomainAndOriginHunterModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(" ; ".join(parts)), final_url),
                 description=" ; ".join(parts),
                 module=self.name,
                 scan_id=context.scan_id,

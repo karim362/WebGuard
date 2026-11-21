@@ -29,6 +29,11 @@ SERVER_HINTS = {
     "netlify": r"netlify",
 }
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class TechnologyModule(BaseModule):
     name = "technology_detect"
     version = "0.4.0"
@@ -89,7 +94,7 @@ class TechnologyModule(BaseModule):
             confidence=Confidence.MEDIUM,
             category="reconnaissance",
             target=context.target.host,
-            affected_url=str(response.url),
+            affected_url=_first_direct_url(str("Technologies inferred from headers and HTML content."), ""),
             description="Technologies inferred from headers and HTML content.",
             module=self.name,
             scan_id=context.scan_id,

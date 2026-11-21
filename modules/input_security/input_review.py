@@ -23,6 +23,11 @@ _INPUT_RE = re.compile(
 )
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class InputReviewModule(BaseModule):
     name = "input_review"
     version = "0.7.0"
@@ -61,7 +66,7 @@ class InputReviewModule(BaseModule):
             confidence=Confidence.HIGH,
             category="input_security",
             target=context.target.host,
-            affected_url=context.target.url,
+            affected_url=_first_direct_url(str(desc), ""),
             description=desc,
             module=self.name,
             scan_id=context.scan_id,

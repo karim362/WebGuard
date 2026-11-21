@@ -55,6 +55,11 @@ def _extract_valid_jwts(text: str) -> list[tuple[str, dict, dict]]:
     return found
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class JwtReviewModule(BaseModule):
     name = "jwt_review"
     version = "0.7.1"
@@ -95,9 +100,7 @@ class JwtReviewModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="authentication",
                     target=context.target.host,
-                    affected_url=str(
-                        getattr(r, "url", context.target.url)
-                    ),
+                    affected_url=_first_direct_url(str("JWT header specifies alg='none'."), ""),
                     description="JWT header specifies alg='none'.",
                     module=self.name,
                     scan_id=context.scan_id,
@@ -110,9 +113,7 @@ class JwtReviewModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="authentication",
                     target=context.target.host,
-                    affected_url=str(
-                        getattr(r, "url", context.target.url)
-                    ),
+                    affected_url=_first_direct_url(str("Valid JWT structure detected; verify exp/aud/iss."), ""),
                     description="Valid JWT structure detected; verify exp/aud/iss.",
                     module=self.name,
                     scan_id=context.scan_id,

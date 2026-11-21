@@ -1,11 +1,17 @@
 """Crawler module — BFS crawl, emits discovered URLs as info finding."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
 from models.result import (
     Confidence, Evidence, EvidenceType, Finding, Severity, VerificationStatus,
 )
 from services.crawler_service import CrawlerService
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class CrawlerModule(BaseModule):
     name = "crawler"
@@ -42,7 +48,7 @@ class CrawlerModule(BaseModule):
             confidence=Confidence.HIGH,
             category="discovery",
             target=context.target.host,
-            affected_url=context.target.url,
+            affected_url=_first_direct_url(str("Crawl summary of discovered URLs."), ""),
             description="Crawl summary of discovered URLs.",
             module=self.name,
             scan_id=context.scan_id,
@@ -59,7 +65,7 @@ class CrawlerModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="discovery",
                 target=context.target.host,
-                affected_url=context.target.url,
+                affected_url=_first_direct_url(str("Forms indicate input points for further review."), ""),
                 description="Forms indicate input points for further review.",
                 module=self.name,
                 scan_id=context.scan_id,

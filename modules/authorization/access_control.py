@@ -1,5 +1,6 @@
 """Access control posture review with soft-404 and login-wall filtering."""
 from __future__ import annotations
+import re
 from urllib.parse import urljoin
 from core.execution_manager import ModuleContext
 from models.module import (
@@ -52,6 +53,11 @@ def _looks_like_login_page(body: str) -> bool:
     return any(m in low for m in _LOGIN_MARKERS)
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class AccessControlModule(BaseModule):
     name = "access_control"
     version = "0.9.1"
@@ -88,7 +94,7 @@ class AccessControlModule(BaseModule):
                         confidence=Confidence.MEDIUM,
                         category="authorization",
                         target=context.target.host,
-                        affected_url=url,
+                        affected_url=_first_direct_url(str("Route presents a login prompt rather than data."), ""),
                         description="Route presents a login prompt rather than data.",
                         module=self.name,
                         scan_id=context.scan_id,
@@ -101,7 +107,10 @@ class AccessControlModule(BaseModule):
                         confidence=Confidence.MEDIUM,
                         category="authorization",
                         target=context.target.host,
-                        affected_url=url,
+                        affected_url=_first_direct_url(str((
+                            "Returned 200 without clear login wall or soft-404; "
+                            "verify authorization manually."
+                        )), ""),
                         description=(
                             "Returned 200 without clear login wall or soft-404; "
                             "verify authorization manually."
@@ -118,7 +127,7 @@ class AccessControlModule(BaseModule):
                     confidence=Confidence.HIGH,
                     category="authorization",
                     target=context.target.host,
-                    affected_url=url,
+                    affected_url=_first_direct_url(str(f"Returned HTTP {code} on probe."), ""),
                     description=f"Returned HTTP {code} on probe.",
                     module=self.name,
                     scan_id=context.scan_id,

@@ -1,10 +1,16 @@
 """DNS reconnaissance module — records A/AAAA/MX/NS/TXT as informational findings."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
 from models.result import (
     Confidence, Evidence, EvidenceType, Finding, Severity, VerificationStatus,
 )
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class DnsReconModule(BaseModule):
     name = "dns_recon"
@@ -39,7 +45,7 @@ class DnsReconModule(BaseModule):
             confidence=Confidence.HIGH,
             category="reconnaissance",
             target=host,
-            affected_url=f"dns://{host}",
+            affected_url=_first_direct_url(str("Enumerated DNS records provide attack surface context."), ""),
             description="Enumerated DNS records provide attack surface context.",
             module=self.name,
             scan_id=context.scan_id,
@@ -56,7 +62,7 @@ class DnsReconModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="reconnaissance",
                 target=host,
-                affected_url=f"dns://{host}",
+                affected_url=_first_direct_url(str("Missing SPF increases email spoofing risk."), ""),
                 description="Missing SPF increases email spoofing risk.",
                 module=self.name,
                 scan_id=context.scan_id,

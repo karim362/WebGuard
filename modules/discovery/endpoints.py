@@ -1,5 +1,6 @@
 """Endpoint classification from crawler discovery."""
 from __future__ import annotations
+import re
 from urllib.parse import urlparse
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
@@ -10,6 +11,11 @@ from models.result import (
 SENSITIVE_HINTS = ("admin", "login", "logout", "dashboard", "settings",
                    "config", "backup", "debug", "internal", "private",
                    "api", "graphql", "wp-admin", "phpmyadmin", "actuator")
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class EndpointsModule(BaseModule):
     name = "endpoints_classify"
@@ -47,7 +53,7 @@ class EndpointsModule(BaseModule):
             confidence=Confidence.HIGH,
             category="discovery",
             target=context.target.host,
-            affected_url=context.target.url,
+            affected_url=_first_direct_url(str("Distribution of URL extensions in scope."), ""),
             description="Distribution of URL extensions in scope.",
             module=self.name,
             scan_id=context.scan_id,
@@ -63,7 +69,7 @@ class EndpointsModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="discovery",
                 target=context.target.host,
-                affected_url=context.target.url,
+                affected_url=_first_direct_url(str("Paths worth manual review for access control."), ""),
                 description="Paths worth manual review for access control.",
                 module=self.name,
                 scan_id=context.scan_id,

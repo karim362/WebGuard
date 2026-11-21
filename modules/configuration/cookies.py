@@ -1,5 +1,6 @@
 """Cookie attribute review (Secure, HttpOnly, SameSite)."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import (
     BaseModule,
@@ -32,6 +33,11 @@ def _parse_set_cookie(value: str) -> dict[str, str]:
         else:
             attrs[p.lower()] = ""
     return attrs
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class CookiesReviewModule(BaseModule):
@@ -77,7 +83,7 @@ class CookiesReviewModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=context.target.host,
-                affected_url=str(r.url),
+                affected_url=_first_direct_url(str("; ".join(issues)), ""),
                 description="; ".join(issues),
                 module=self.name,
                 scan_id=context.scan_id,

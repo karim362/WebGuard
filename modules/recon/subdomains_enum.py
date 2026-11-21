@@ -47,6 +47,11 @@ def _root_domain(host: str) -> str:
     return host.lower()
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class SubdomainsEnumModule(BaseModule):
     name = "subdomains_enum"
     version = "1.1.0"
@@ -105,7 +110,7 @@ class SubdomainsEnumModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=context.target.host,
-                affected_url=final_url,
+                affected_url=_first_direct_url(str(f"Subdomain {sub_host} responded with HTTP {code}."), final_url),
                 description=f"Subdomain {sub_host} responded with HTTP {code}.",
                 module=self.name,
                 scan_id=context.scan_id,

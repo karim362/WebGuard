@@ -10,6 +10,11 @@ from models.result import (
 
 _URL_RE = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.IGNORECASE)
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class SitemapModule(BaseModule):
     name = "sitemap_parse"
     version = "0.5.0"
@@ -45,7 +50,7 @@ class SitemapModule(BaseModule):
             confidence=Confidence.HIGH,
             category="discovery",
             target=context.target.host,
-            affected_url=url,
+            affected_url=_first_direct_url(str("Sitemap lists paths that may not be linked publicly."), ""),
             description="Sitemap lists paths that may not be linked publicly.",
             module=self.name,
             scan_id=context.scan_id,

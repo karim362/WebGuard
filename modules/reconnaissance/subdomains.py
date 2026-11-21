@@ -3,6 +3,7 @@ Limited subdomain enumeration via DNS brute force with a small wordlist.
 Passive-safe: DNS only, no HTTP, rate-limited.
 """
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import BaseModule, ModuleResult, ModuleStatus, ScanMode
 from models.result import (
@@ -14,6 +15,11 @@ COMMON_SUBDOMAINS = [
     "app", "mail", "portal", "blog", "shop", "docs",
     "static", "cdn", "assets", "media", "support", "help",
 ]
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
 
 class SubdomainsModule(BaseModule):
     name = "subdomains_enum"
@@ -48,7 +54,7 @@ class SubdomainsModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="reconnaissance",
                 target=host,
-                affected_url=f"dns://{host}",
+                affected_url=_first_direct_url(str("Subdomains may host separate attack surfaces."), ""),
                 description="Subdomains may host separate attack surfaces.",
                 module=self.name,
                 scan_id=context.scan_id,

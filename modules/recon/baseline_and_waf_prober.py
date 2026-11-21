@@ -25,6 +25,11 @@ _WAF_SIGNATURES = (
 )
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class BaselineAndWafProberModule(BaseModule):
     name = "baseline_and_waf_prober"
     version = "1.0.0"
@@ -64,7 +69,7 @@ class BaselineAndWafProberModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="fingerprint",
                 target=host,
-                affected_url=str(getattr(root_resp, "url", base_url)),
+                affected_url=_first_direct_url(str("Protective edge/WAF headers or challenge markers detected; interpret blocked probes carefully."), base_url),
                 description="Protective edge/WAF headers or challenge markers detected; interpret blocked probes carefully.",
                 module=self.name,
                 scan_id=context.scan_id,
@@ -86,7 +91,7 @@ class BaselineAndWafProberModule(BaseModule):
                         confidence=Confidence.HIGH,
                         category="recon",
                         target=host,
-                        affected_url=missing_url,
+                        affected_url=_first_direct_url(str(f"Missing path returned 200 ({len(m_body)}B, title='{m_title}'); verify body content before trusting 200s."), base_url),
                         description=f"Missing path returned 200 ({len(m_body)}B, title='{m_title}'); verify body content before trusting 200s.",
                         module=self.name,
                         scan_id=context.scan_id,

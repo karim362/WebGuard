@@ -1,5 +1,6 @@
 """CORS policy review."""
 from __future__ import annotations
+import re
 from core.execution_manager import ModuleContext
 from models.module import (
     BaseModule,
@@ -13,6 +14,11 @@ from models.result import (
     Severity,
     VerificationStatus,
 )
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class CorsReviewModule(BaseModule):
@@ -43,7 +49,8 @@ class CorsReviewModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="api_security",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str("ACAO=* with ACAC=true allows "
+                            "any origin to read responses."), ""),
                 description="ACAO=* with ACAC=true allows "
                             "any origin to read responses.",
                 module=self.name,
@@ -57,7 +64,8 @@ class CorsReviewModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="api_security",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str("Access-Control-Allow-Origin=* "
+                            "permits all origins."), ""),
                 description="Access-Control-Allow-Origin=* "
                             "permits all origins.",
                 module=self.name,
@@ -71,7 +79,7 @@ class CorsReviewModule(BaseModule):
                 confidence=Confidence.MEDIUM,
                 category="api_security",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str("Server echoes untrusted origin."), ""),
                 description="Server echoes untrusted origin.",
                 module=self.name,
                 scan_id=context.scan_id,

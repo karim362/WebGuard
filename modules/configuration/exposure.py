@@ -1,5 +1,6 @@
 """Exposure review for exposed sensitive paths."""
 from __future__ import annotations
+import re
 from urllib.parse import urljoin
 from core.execution_manager import ModuleContext
 from models.module import (
@@ -22,6 +23,11 @@ SENSITIVE_PATHS = [
     ("/backup.zip", "backup", "Backup archive exposed"),
     ("/config.php.bak", "backup", "PHP backup exposed"),
 ]
+
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
 
 
 class ExposureModule(BaseModule):
@@ -58,7 +64,7 @@ class ExposureModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="configuration",
                 target=context.target.host,
-                affected_url=url,
+                affected_url=_first_direct_url(str(f"Accessible at {path}"), ""),
                 description=f"Accessible at {path}",
                 module=self.name,
                 scan_id=context.scan_id,

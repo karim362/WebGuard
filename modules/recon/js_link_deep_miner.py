@@ -23,6 +23,11 @@ _ROUTE_RE = re.compile(
 _JSON_KEY_RE = re.compile(r"""["']([a-zA-Z0-9_]{2,28})["']\s*:""")
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class JsLinkDeepMinerModule(BaseModule):
     name = "js_link_deep_miner"
     version = "1.0.0"
@@ -119,7 +124,11 @@ class JsLinkDeepMinerModule(BaseModule):
                 confidence=Confidence.HIGH,
                 category="recon",
                 target=host,
-                affected_url=base_url,
+                affected_url=_first_direct_url(str((
+                    f"Routes: {', '.join(sorted(routes)[:5]) or 'none'} | "
+                    f"Params: {', '.join(sorted(params)[:6]) or 'none'} | "
+                    f"Keys: {', '.join(sorted(keys)[:6]) or 'none'}"
+                )), base_url),
                 description=(
                     f"Routes: {', '.join(sorted(routes)[:5]) or 'none'} | "
                     f"Params: {', '.join(sorted(params)[:6]) or 'none'} | "

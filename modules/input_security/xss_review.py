@@ -33,6 +33,11 @@ def _classify_context(body: str, val: str) -> tuple[str, Severity]:
     return "", Severity.INFO
 
 
+def _first_direct_url(text: str, fallback: str) -> str:
+    m = re.search(r"https?://[^\s|\"';<>)]+", text or "")
+    return m.group(0) if m else fallback
+
+
 class XssReviewModule(BaseModule):
     name = "xss_review"
     version = "0.9.0"
@@ -79,9 +84,10 @@ class XssReviewModule(BaseModule):
                     confidence=Confidence.MEDIUM,
                     category="input_security",
                     target=context.target.host,
-                    affected_url=str(
-                        getattr(r, "url", context.target.url)
-                    ),
+                    affected_url=_first_direct_url(str((
+                        f"Value of '{name}' appears in {ctx_name} context; "
+                        "verify output encoding."
+                    )), ""),
                     description=(
                         f"Value of '{name}' appears in {ctx_name} context; "
                         "verify output encoding."
