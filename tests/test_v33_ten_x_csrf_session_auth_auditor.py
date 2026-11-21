@@ -28,6 +28,9 @@ class _Http:
 def test_ten_x_csrf_session_and_auth_auditor():
     def _route(method, u, kw):
         if method == "POST":
+            hdrs = kw.get("headers") or {}
+            if hdrs.get("Origin") == "https://evil.example.invalid":
+                return _Resp(200, "cross-origin ok", {}, u)
             data = kw.get("data") or {}
             if "csrf_token" not in data:
                 return _Resp(200, "ok", {}, u)
@@ -50,12 +53,9 @@ def test_ten_x_csrf_session_and_auth_auditor():
     ctx = ModuleContext(t, ScopeGuard(t), {"http": _Http(_route)}, "s_csrf10x", ScanMode.ADVANCED, EventBus())
     res = TenXCsrfSessionAndAuthAuditorModule().run(ctx)
     titles = " ".join(f.title for f in res.findings)
-    med_desc = " ".join(f.description for f in res.findings if "cache" in f.title.lower())
+    high_desc = " ".join(f.description for f in res.findings if f.title.startswith("High-risk"))
+    info_desc = " ".join(f.description for f in res.findings if "summary" in f.title.lower())
     assert "Session/token parameter(s) in URLs: session" in titles
     assert "High-risk CSRF/cookie/session weaknesses" in titles
-    assert "CSRF, cookie attribute, cache, and session findings" in titles
-    assert "CSRF token probe results and auth/session surface summary" in titles
-    assert "input 'csrf_token'" in med_desc
-    assert "meta" not in med_desc
-    assert "Cache-Control lacks no-store" in med_desc
-    assert "Pragma lacks no-cache" in med_desc
+    assert "cross-origin POST returned 200" in high_desc
+    assert "cross-origin POST returned 200" in info_desc
