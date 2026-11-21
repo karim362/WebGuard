@@ -26,6 +26,20 @@ _LINK_RE = re.compile(r"""\b(?:href|src|action)\s*=\s*["']([^"'#]+(?:\?[^"']*)?)
 _ROUTE_RE = re.compile(r"""["']((?:/api/|/v[1-9]/|/admin|/user|/auth|/search|/media|/assets)[A-Za-z0-9_./:-]{1,80})["']""")
 
 
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    s = text or ""
+    m = re.search(r"https?://[^\s|\"'';<>)]+", s)
+    if m:
+        return m.group(0)
+    pm = re.search(r"(?<![a-zA-Z0-9_.-])(/[a-zA-Z0-9_./-]{1,120})", s)
+    if pm and fallback:
+        base = re.match(r"^(https?://[^/?#]+)", fallback)
+        if base:
+            return base.group(1) + pm.group(1)
+    return fallback
+
+
 def _root_domain(host: str) -> str:
     parts = [p for p in host.lower().strip(".").split(".") if p]
     if len(parts) >= 2:

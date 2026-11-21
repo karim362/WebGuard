@@ -20,6 +20,20 @@ _SCRIPT_BLOCK_RE = re.compile(r"<script\b[^>]*>.*?</script>", re.S | re.I)
 _ATTR_REFLECT_RE = re.compile(r"""[A-Za-z0-9_:-]+\s*=\s*["'][^"']*""")
 
 
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    s = text or ""
+    m = re.search(r"https?://[^\s|\"'';<>)]+", s)
+    if m:
+        return m.group(0)
+    pm = re.search(r"(?<![a-zA-Z0-9_.-])(/[a-zA-Z0-9_./-]{1,120})", s)
+    if pm and fallback:
+        base = re.match(r"^(https?://[^/?#]+)", fallback)
+        if base:
+            return base.group(1) + pm.group(1)
+    return fallback
+
+
 def _classify_context(body: str, val: str) -> tuple[str, Severity]:
     low_body = body.lower()
     for m in _SCRIPT_BLOCK_RE.finditer(body):

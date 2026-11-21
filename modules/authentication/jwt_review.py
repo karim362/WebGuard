@@ -24,6 +24,20 @@ _JWT_CANDIDATE_RE = re.compile(
 )
 
 
+
+def _first_direct_url(text: str, fallback: str) -> str:
+    s = text or ""
+    m = re.search(r"https?://[^\s|\"'';<>)]+", s)
+    if m:
+        return m.group(0)
+    pm = re.search(r"(?<![a-zA-Z0-9_.-])(/[a-zA-Z0-9_./-]{1,120})", s)
+    if pm and fallback:
+        base = re.match(r"^(https?://[^/?#]+)", fallback)
+        if base:
+            return base.group(1) + pm.group(1)
+    return fallback
+
+
 def _decode_b64_json_obj(part: str) -> dict | None:
     if not part or len(part) % 4 == 1:
         return None
