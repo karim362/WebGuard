@@ -36,9 +36,10 @@ def test_ten_x_csrf_session_and_auth_auditor():
             return _Resp(403, "forbidden", {}, u)
         return _Resp(
             200,
-            '<html><form method="post" action="/transfer"><input type="hidden" name="csrf_token" value="short"><input type="text" name="amount"></form></html>',
+            '<html><head><meta name="csrf-token" content=""></head><body><form method="post" action="/transfer"><input type="hidden" name="csrf_token" value="short"><input type="text" name="amount"></form></body></html>',
             {
                 "Set-Cookie": "session_id=tok123; SameSite=None; Domain=.auth10x.test",
+                "Cache-Control": "no-cache",
                 "Access-Control-Allow-Origin": "https://evil.example.invalid",
                 "Access-Control-Allow-Credentials": "true",
             },
@@ -49,7 +50,12 @@ def test_ten_x_csrf_session_and_auth_auditor():
     ctx = ModuleContext(t, ScopeGuard(t), {"http": _Http(_route)}, "s_csrf10x", ScanMode.ADVANCED, EventBus())
     res = TenXCsrfSessionAndAuthAuditorModule().run(ctx)
     titles = " ".join(f.title for f in res.findings)
+    med_desc = " ".join(f.description for f in res.findings if "cache" in f.title.lower())
     assert "Session/token parameter(s) in URLs: session" in titles
     assert "High-risk CSRF/cookie/session weaknesses" in titles
-    assert "CSRF, cookie attribute, and session hardening findings" in titles
+    assert "CSRF, cookie attribute, cache, and session findings" in titles
     assert "CSRF token probe results and auth/session surface summary" in titles
+    assert "input 'csrf_token'" in med_desc
+    assert "meta" not in med_desc
+    assert "Cache-Control lacks no-store" in med_desc
+    assert "Pragma lacks no-cache" in med_desc
